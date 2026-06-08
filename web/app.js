@@ -174,6 +174,7 @@ function renderSidebar() {
       state.selectedProject = p.name;
       renderSidebar();
       renderContent();
+      closeSidebar();
     });
     list.appendChild(item);
   });
@@ -396,6 +397,20 @@ async function rescan() {
   }
 }
 
+/* ---------------------------- Tiroir (mobile) --------------------------- */
+function openSidebar() {
+  $("#sidebar")?.classList.add("mobile-open");
+  $("#sidebar-backdrop")?.classList.add("show");
+}
+function closeSidebar() {
+  $("#sidebar")?.classList.remove("mobile-open");
+  $("#sidebar-backdrop")?.classList.remove("show");
+}
+function toggleSidebar() {
+  if ($("#sidebar")?.classList.contains("mobile-open")) closeSidebar();
+  else openSidebar();
+}
+
 /* ---------------------------- Branchements ------------------------------ */
 function bind() {
   $("#login-form").addEventListener("submit", login);
@@ -403,6 +418,9 @@ function bind() {
   $("#rescan-btn").addEventListener("click", rescan);
   $("#edit-save").addEventListener("click", saveEdit);
   $("#delete-confirm").addEventListener("click", confirmDelete);
+
+  $("#menu-btn").addEventListener("click", toggleSidebar);
+  $("#sidebar-backdrop").addEventListener("click", closeSidebar);
 
   $("#search-input").addEventListener("input", (e) => {
     state.search = e.target.value.trim().toLowerCase();
@@ -414,12 +432,13 @@ function bind() {
     node.addEventListener("click", closeModals)
   );
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") closeModals();
+    if (e.key === "Escape") { closeModals(); closeSidebar(); }
   });
 }
 
 async function boot() {
   bind();
+  registerServiceWorker();
   if (state.token) {
     try {
       await enterApp();
@@ -429,6 +448,15 @@ async function boot() {
     }
   }
   $("#login-view").hidden = false;
+}
+
+function registerServiceWorker() {
+  if (!("serviceWorker" in navigator)) return;
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js").catch(() => {
+      /* PWA non bloquante : on ignore silencieusement un échec d'enregistrement */
+    });
+  });
 }
 
 boot();

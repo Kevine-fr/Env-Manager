@@ -91,6 +91,19 @@ server {
 
 ---
 
+## PWA (installation sur mobile / bureau)
+
+L'interface est une **PWA installable** : une fois servie en **HTTPS**, le navigateur propose « Ajouter à l'écran d'accueil » / « Installer ». Elle s'ouvre alors en plein écran, avec sa propre icône.
+
+- `manifest.json` — métadonnées + icônes (mode `standalone`, thème sombre).
+- `sw.js` — service worker qui met en cache **uniquement la coquille statique** (HTML/CSS/JS/icônes). Les routes `/api/*` (qui transportent les secrets) **ne sont jamais mises en cache**.
+- Icônes dans `web/icons/` (192/512 standard + maskable, apple-touch, favicons).
+
+> ⚠️ L'installation PWA et le service worker nécessitent un **contexte sécurisé** (HTTPS, ou `localhost` en dev). Derrière votre Nginx + TLS, c'est automatique.
+> Si vous modifiez les fichiers du front, incrémentez la constante `CACHE` dans `web/sw.js` pour forcer la mise à jour chez les clients.
+
+---
+
 ## Déploiement alternatif (sans Docker)
 
 ```bash

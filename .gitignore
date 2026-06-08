@@ -1,0 +1,17 @@
+# Secrets & config locale
+.env
+
+# Données générées (contiennent les secrets en clair !)
+data/*.json
+data/*.tmp
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+
+# Divers
+.DS_Store
+*.log

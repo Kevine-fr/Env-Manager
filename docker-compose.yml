@@ -1,0 +1,36 @@
+services:
+  env-manager:
+    build: .
+    image: env-manager:latest
+    container_name: env-manager
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DEPLOY_ROOT: /deploy
+      DATA_DIR: /app/data
+    volumes:
+      # Dossier des projets du VPS, monté en LECTURE+ÉCRITURE
+      # (l'écriture est nécessaire pour éditer/supprimer les variables).
+      # Adaptez le chemin de gauche si besoin.
+      - ${DEPLOY_HOST_PATH:-/home/kevine/deploy}:/deploy:rw
+      # Persistance du JSON généré entre les redémarrages.
+      - envmgr_data:/app/data
+    networks:
+      - web
+    # --- Option A (recommandée) : derrière votre gateway Nginx existant ---
+    # Aucun port publié : votre nginx du réseau "web" proxifie vers
+    # http://env-manager:8000 (ex: env.votre-domaine.com). Voir README.
+    #
+    # --- Option B : accès direct (sans gateway) ---
+    # Décommentez pour exposer le port (à protéger par firewall/HTTPS) :
+    # ports:
+    #   - "127.0.0.1:8090:8000"
+
+networks:
+  # Réseau partagé existant sur le VPS (où vit déjà nginx_proxy).
+  web:
+    external: true
+
+volumes:
+  envmgr_data:

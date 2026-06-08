@@ -1,0 +1,16 @@
+# ============================================================================
+# OPTIONNEL — uniquement si vous préférez un vrai cron système plutôt que le
+# scheduler interne de l'application (qui scanne déjà toutes les 30 min).
+# ============================================================================
+#
+# 1) Éditez votre crontab :   crontab -e
+# 2) Ajoutez la ligne suivante (adaptez le chemin du projet) :
+#
+#    */30 * * * * cd /home/kevine/env-manager && /usr/bin/python3 -m scripts.run_scan >> /var/log/env-manager-scan.log 2>&1
+#
+# Si vous utilisez Docker, lancez plutôt le scan dans le conteneur :
+#
+#    */30 * * * * docker exec env-manager python -m scripts.run_scan >> /var/log/env-manager-scan.log 2>&1
+#
+# Dans ce cas, mettez SCAN_ON_STARTUP=true et augmentez SCAN_INTERVAL_MINUTES
+# à une grande valeur (ou laissez les deux : ce n'est pas un problème).

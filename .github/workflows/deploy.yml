@@ -72,6 +72,12 @@ jobs:
           HOST=0.0.0.0
           PORT=8000
 
+          GIT_REPO_SLUG=${{ secrets.GIT_REPO_SLUG }}
+          GIT_TOKEN=${{ secrets.GIT_TOKEN }}
+          INFRA_AUTO_PUSH=${{ secrets.INFRA_AUTO_PUSH }}
+          INFRA_ENABLED=${{ secrets.INFRA_ENABLED }}
+          INFRA_REPO_PATH=${{ secrets.INFRA_REPO_PATH }}
+
           ENVEOF
 
           echo "Demarrage des conteneurs..."

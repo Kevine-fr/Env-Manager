@@ -114,7 +114,7 @@ class Settings:
         self.git_author_name: str = os.getenv("GIT_AUTHOR_NAME", "ENV Manager")
         self.git_author_email: str = os.getenv("GIT_AUTHOR_EMAIL", "env-manager@vps.local")
         # Auth push : soit un token GitHub (HTTPS), soit une clé SSH montée.
-        self.github_token: str = os.getenv("GITHUB_TOKEN", "")
+        self.github_token: str = os.getenv("GIT_TOKEN", "")
         self.git_repo_slug: str = os.getenv("GIT_REPO_SLUG", "")  # ex: Kevine-fr/Infrastructure
         self.git_ssh_key_path: str = os.getenv("GIT_SSH_KEY_PATH", "")
         # Pousser automatiquement après chaque modif (.conf, SSL) ?

@@ -9,13 +9,23 @@ services:
     environment:
       DEPLOY_ROOT: /deploy
       DATA_DIR: /app/data
+      # Racine deploy côté HÔTE (= source du montage ci-dessous). Sert à traduire
+      # les chemins pour certbot (conteneur frère qui monte des chemins hôte).
+      DEPLOY_HOST_ROOT: ${DEPLOY_HOST_PATH:-/home/kevine/deploy}
     volumes:
       # Dossier des projets du VPS, monté en LECTURE+ÉCRITURE
-      # (l'écriture est nécessaire pour éditer/supprimer les variables).
+      # (l'écriture est nécessaire pour éditer/supprimer les variables ET pour
+      #  générer les .conf nginx + commiter le dépôt Infrastructure).
       # Adaptez le chemin de gauche si besoin.
       - ${DEPLOY_HOST_PATH:-/home/kevine/deploy}:/deploy:rw
       # Persistance du JSON généré entre les redémarrages.
       - envmgr_data:/app/data
+      # === Module Infrastructure ===
+      # Accès au démon Docker : up/down des services, reload nginx, certbot.
+      # ⚠️ Équivaut à un accès root sur l'hôte — n'activez ce module qu'en confiance.
+      - /var/run/docker.sock:/var/run/docker.sock
+      # (Optionnel) Clé SSH de déploiement pour le git push (si pas de token) :
+      # - ${GIT_SSH_KEY_HOST:-./infra_deploy_key}:/keys/deploy_key:ro
     networks:
       - web
     # --- Option A (recommandée) : derrière votre gateway Nginx existant ---

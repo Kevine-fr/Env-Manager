@@ -4,13 +4,14 @@
    Les routes /api/* (qui transportent les secrets) ne sont JAMAIS interceptées
    ni mises en cache. Incrémentez CACHE pour forcer une mise à jour.
    ========================================================================= */
-const CACHE = "envmgr-shell-v2";
+const CACHE = "envmgr-shell-v3";
 
 const SHELL = [
   "/",
   "/index.html",
   "/styles.css",
   "/app.js",
+  "/infra.js",
   "/manifest.json",
   "/icons/mark.png",
   "/icons/icon-192.png",

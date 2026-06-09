@@ -117,6 +117,7 @@ function logout() {
 async function enterApp() {
   $("#login-view").hidden = true;
   $("#app-view").hidden = false;
+  if (window.__onEnterApp) window.__onEnterApp();
   await loadProjects();
 }
 
@@ -376,6 +377,8 @@ async function confirmDelete() {
 function closeModals() {
   $("#edit-modal").hidden = true;
   $("#delete-modal").hidden = true;
+  const c = $("#confirm-modal");
+  if (c) c.hidden = true;
   state.edit = null;
   state.remove = null;
 }

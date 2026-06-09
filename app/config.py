@@ -82,6 +82,44 @@ class Settings:
         self.port: int = int(os.getenv("PORT", "8000"))
         self.host: str = os.getenv("HOST", "0.0.0.0")
 
+        # =====================================================================
+        # Intégration "Infrastructure" (contrôle Docker, nginx, SSL, git push).
+        # =====================================================================
+        self.infra_enabled: bool = _get_bool("INFRA_ENABLED", True)
+
+        # Domaine de base : les sous-domaines deviennent <sous-domaine>.<APP_DOMAIN>.
+        self.app_domain: str = os.getenv("APP_DOMAIN", "wk-archi-o22a-15m-g1.fr")
+
+        # Racine du dossier deploy côté HÔTE (= source du montage Docker).
+        # Sert à traduire les chemins conteneur -> hôte pour les conteneurs frères
+        # (certbot monte des chemins HÔTE, pas conteneur).
+        self.deploy_host_root: str = os.getenv("DEPLOY_HOST_ROOT", "/home/kevine/deploy")
+
+        # Chemin du dépôt Infrastructure tel que vu par env-manager (via /deploy).
+        # Vide => auto-détection d'un sous-dossier de DEPLOY_ROOT contenant nginx/conf.d.
+        self.infra_repo_path_raw: str = os.getenv("INFRA_REPO_PATH", "")
+
+        self.nginx_container: str = os.getenv("NGINX_CONTAINER", "nginx")
+        self.nginx_conf_subdir: str = os.getenv("NGINX_CONF_SUBDIR", "nginx/conf.d")
+        self.certbot_www_subdir: str = os.getenv("CERTBOT_WWW_SUBDIR", "certbot/www")
+        self.certbot_conf_subdir: str = os.getenv("CERTBOT_CONF_SUBDIR", "certbot/conf")
+        self.certbot_image: str = os.getenv("CERTBOT_IMAGE", "certbot/certbot:latest")
+
+        # Services dont on autorise le pilotage (start/stop/restart) depuis l'UI.
+        self.infra_services: list[str] = _get_list("INFRA_SERVICES", ["sonarqube"])
+
+        # --- Git (commit + push du dépôt Infrastructure) ---
+        self.git_branch: str = os.getenv("GIT_BRANCH", "main")
+        self.git_remote: str = os.getenv("GIT_REMOTE", "origin")
+        self.git_author_name: str = os.getenv("GIT_AUTHOR_NAME", "ENV Manager")
+        self.git_author_email: str = os.getenv("GIT_AUTHOR_EMAIL", "env-manager@vps.local")
+        # Auth push : soit un token GitHub (HTTPS), soit une clé SSH montée.
+        self.github_token: str = os.getenv("GITHUB_TOKEN", "")
+        self.git_repo_slug: str = os.getenv("GIT_REPO_SLUG", "")  # ex: Kevine-fr/Infrastructure
+        self.git_ssh_key_path: str = os.getenv("GIT_SSH_KEY_PATH", "")
+        # Pousser automatiquement après chaque modif (.conf, SSL) ?
+        self.infra_auto_push: bool = _get_bool("INFRA_AUTO_PUSH", True)
+
     @property
     def json_path(self) -> Path:
         return self.data_dir / "envs.json"

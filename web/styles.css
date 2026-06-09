@@ -26,6 +26,11 @@
   --danger-dim: #c64848;
   --danger-glow: rgba(255, 107, 107, 0.14);
 
+  --ok: #56d68b;
+  --ok-glow: rgba(86, 214, 139, 0.14);
+  --warn: #f1b765;
+  --warn-glow: rgba(241, 183, 101, 0.14);
+
   --amber: #f4b942;
 
   --radius: 12px;
@@ -538,4 +543,155 @@ textarea { resize: vertical; line-height: 1.5; }
   .rescan-label { display: none; }              /* bouton scan en icône seule */
   #rescan-btn { padding: 9px 11px; }
   .envfile-path code { font-size: 12px; }
+}
+
+/* =========================================================================
+   Bascule de vue (Secrets / Infra) + Module Infrastructure
+   ========================================================================= */
+.view-switch {
+  display: inline-flex;
+  padding: 3px;
+  gap: 2px;
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  flex: none;
+}
+.view-switch button {
+  display: inline-flex; align-items: center; gap: 6px;
+  border: none; background: transparent;
+  color: var(--text-dim);
+  font: 600 12.5px/1 "Hanken Grotesk", sans-serif;
+  padding: 7px 12px; border-radius: 6px; cursor: pointer;
+  white-space: nowrap;
+}
+.view-switch button svg { width: 15px; height: 15px; }
+.view-switch button:hover { color: var(--text); }
+.view-switch button.active { background: var(--panel-hover); color: var(--text); box-shadow: inset 0 0 0 1px var(--line); }
+
+/* Quand la vue Infra est active, on masque les contrôles propres aux secrets. */
+#app-view.view-infra .search,
+#app-view.view-infra #rescan-btn,
+#app-view.view-infra #menu-btn,
+#app-view.view-infra .scan-meta,
+#app-view.view-infra .dot-sep { display: none; }
+
+#infra-view { display: none; }
+#app-view.view-infra #secrets-view { display: none; }
+#app-view.view-infra #infra-view { display: block; }
+
+/* ----------------------------- Conteneur infra -------------------------- */
+.infra-wrap {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 22px 26px 64px;
+  padding-left: calc(26px + env(safe-area-inset-left, 0px));
+  padding-right: calc(26px + env(safe-area-inset-right, 0px));
+  padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px));
+  display: flex; flex-direction: column; gap: 18px;
+}
+
+.card {
+  background: linear-gradient(180deg, var(--panel) 0%, var(--bg-2) 100%);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.card-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 15px 18px;
+  border-bottom: 1px solid var(--line-soft);
+}
+.card-head .ch-title { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.card-head h3 { font: 700 15px/1.2 "Bricolage Grotesque", sans-serif; }
+.card-head .ch-ic { width: 34px; height: 34px; flex: none; display: grid; place-items: center;
+  border-radius: 9px; background: var(--bg-2); border: 1px solid var(--line); color: var(--accent); }
+.card-head .ch-ic svg { width: 18px; height: 18px; }
+.card-head .ch-actions { display: flex; gap: 8px; flex: none; }
+.card-body { padding: 16px 18px; display: flex; flex-direction: column; gap: 14px; }
+
+/* ------------------------------- Badges --------------------------------- */
+.badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 3px 9px; border-radius: 999px;
+  font: 600 11.5px/1 "Hanken Grotesk", sans-serif;
+  border: 1px solid var(--line); color: var(--text-dim); background: var(--bg-2);
+  white-space: nowrap;
+}
+.badge .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; flex: none; }
+.badge.ok { color: var(--ok); border-color: color-mix(in srgb, var(--ok) 35%, var(--line)); background: var(--ok-glow); }
+.badge.stop { color: var(--text-dim); }
+.badge.warn { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 35%, var(--line)); background: var(--warn-glow); }
+.badge.err { color: var(--danger); border-color: var(--danger-dim); background: var(--danger-glow); }
+.badge.accent { color: var(--accent); border-color: var(--accent-dim); background: var(--accent-glow); }
+
+/* ---------------------------- Lignes de statut -------------------------- */
+.kv { display: grid; grid-template-columns: 150px 1fr; gap: 8px 14px; align-items: baseline; }
+.kv dt { color: var(--muted); font-size: 12.5px; }
+.kv dd { color: var(--text); font-size: 13px; word-break: break-word; }
+.kv dd.mono { font-family: var(--mono); font-size: 12.5px; }
+
+.note {
+  font-size: 12.5px; color: var(--text-dim); line-height: 1.5;
+  background: var(--bg-2); border: 1px solid var(--line-soft);
+  border-radius: var(--radius-sm); padding: 11px 13px;
+}
+.note.warn { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 30%, var(--line)); background: var(--warn-glow); }
+.note.err { color: #ffb3b3; border-color: var(--danger-dim); background: var(--danger-glow); }
+.note code { font-family: var(--mono); font-size: 12px; }
+
+/* ------------------------------- Services ------------------------------- */
+.svc { display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 13px 14px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--bg-2); }
+.svc + .svc { margin-top: 10px; }
+.svc-info { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.svc-name { display: flex; align-items: center; gap: 9px; }
+.svc-name strong { font: 700 14px/1 "Bricolage Grotesque", sans-serif; }
+.svc-sub { font-family: var(--mono); font-size: 11.5px; color: var(--muted); word-break: break-all; }
+.svc-actions { display: flex; gap: 7px; flex: none; }
+
+/* --------------------------------- Formulaires infra -------------------- */
+.form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; align-items: end; }
+.field .suffix-input { display: flex; align-items: stretch; }
+.field .suffix-input input { border-top-right-radius: 0; border-bottom-right-radius: 0; min-width: 0; }
+.field .suffix-input .suffix {
+  display: inline-flex; align-items: center; padding: 0 11px;
+  background: var(--panel-2); border: 1px solid var(--line); border-left: none;
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  color: var(--muted); font-family: var(--mono); font-size: 12px; white-space: nowrap;
+}
+.form-actions { display: flex; justify-content: flex-end; gap: 9px; }
+
+/* ------------------------------- Liste de .conf ------------------------- */
+.conf-list, .cert-list { display: flex; flex-direction: column; gap: 8px; }
+.conf-item, .cert-item {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 11px 13px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--bg-2);
+}
+.conf-meta { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.conf-name { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.conf-name code { font-family: var(--mono); font-size: 12.5px; color: var(--text); }
+.conf-up { font-family: var(--mono); font-size: 11.5px; color: var(--muted); word-break: break-all; }
+.conf-actions { flex: none; display: flex; gap: 7px; }
+
+.section-label { font: 600 11px/1 "Hanken Grotesk"; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--muted); margin-top: 2px; }
+
+.spin { animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ------------------------------- Responsive infra ----------------------- */
+@media (max-width: 860px) {
+  .infra-wrap { padding: 16px 14px 56px;
+    padding-left: calc(14px + env(safe-area-inset-left, 0px));
+    padding-right: calc(14px + env(safe-area-inset-right, 0px)); }
+  .view-switch button span { display: none; }      /* icônes seules sur mobile */
+  .view-switch button { padding: 8px 10px; }
+  .kv { grid-template-columns: 1fr; gap: 2px 0; }
+  .kv dt { margin-top: 6px; }
+  .svc { flex-direction: column; align-items: stretch; }
+  .svc-actions { justify-content: flex-end; }
+  .conf-item, .cert-item { flex-direction: column; align-items: stretch; }
+  .conf-actions { justify-content: flex-end; }
+  .card-head { flex-wrap: wrap; }
 }

@@ -30,6 +30,8 @@ from .env_io import (
     resolve_env_path,
     update_variable,
 )
+from . import infra
+from .infra import InfraError
 from .scanner import build_snapshot, load_snapshot, run_scan, write_snapshot
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
@@ -94,9 +96,34 @@ class DeleteIn(BaseModel):
     key: str
 
 
+class ServiceActionIn(BaseModel):
+    name: str
+    action: str  # start | stop | restart
+
+
+class NginxCreateIn(BaseModel):
+    subdomain: str
+    container: str
+    port: int
+
+
+class NginxDeleteIn(BaseModel):
+    file: str
+
+
+class SSLIn(BaseModel):
+    subdomain: str
+    email: str
+
+
 # ------------------------ Gestion des erreurs métier -------------------------
 @app.exception_handler(EnvIOError)
 async def _env_io_handler(_, exc: EnvIOError):
+    return JSONResponse(status_code=exc.status_code, content={"detail": exc.message})
+
+
+@app.exception_handler(InfraError)
+async def _infra_handler(_, exc: InfraError):
     return JSONResponse(status_code=exc.status_code, content={"detail": exc.message})
 
 
@@ -164,6 +191,84 @@ def secrets_delete(body: DeleteIn, _: dict = Depends(require_admin)):
     refreshed = _refresh_file_in_snapshot(body.project, body.file)
     logger.info("Variable supprimée : %s/%s :: %s", body.project, body.file, body.key)
     return {"ok": True, "key": body.key, **refreshed}
+
+
+# ============================= Infrastructure ================================
+def require_infra(_: dict = Depends(require_admin)) -> None:
+    """Admin + module infra activé."""
+    if not settings.infra_enabled:
+        raise HTTPException(status_code=404, detail="Module Infrastructure désactivé.")
+
+
+def _sync_repo(message: str, rel_paths: list[str] | None) -> dict:
+    """Commite + pousse, sans faire échouer l'action infra si git échoue."""
+    try:
+        return infra.git_commit_and_push(message, rel_paths)
+    except InfraError as exc:
+        logger.warning("Sync git échouée : %s", exc.message)
+        return {"ok": False, "error": exc.message}
+
+
+@app.get("/api/infra/status")
+def infra_status(_: None = Depends(require_infra)):
+    return infra.infra_status()
+
+
+@app.get("/api/infra/services")
+def infra_services(_: None = Depends(require_infra)):
+    return {"services": infra.list_services()}
+
+
+@app.post("/api/infra/services/action")
+def infra_service_action(body: ServiceActionIn, _: None = Depends(require_infra)):
+    return infra.service_action(body.name, body.action)
+
+
+@app.get("/api/infra/nginx")
+def infra_nginx_list(_: None = Depends(require_infra)):
+    return {"confs": infra.list_confs()}
+
+
+@app.post("/api/infra/nginx")
+def infra_nginx_create(body: NginxCreateIn, _: None = Depends(require_infra)):
+    result = infra.create_conf(body.subdomain, body.container, body.port)
+    rel = f"{settings.nginx_conf_subdir}/{result['file']}"
+    git = _sync_repo(f"nginx: ajoute le proxy {result['fqdn']} -> {result['upstream']}", [rel])
+    return {**result, "git": git}
+
+
+@app.post("/api/infra/nginx/delete")
+def infra_nginx_delete(body: NginxDeleteIn, _: None = Depends(require_infra)):
+    result = infra.delete_conf(body.file)
+    rel = f"{settings.nginx_conf_subdir}/{result['file']}"
+    git = _sync_repo(f"nginx: supprime {result['file']}", [rel])
+    return {**result, "git": git}
+
+
+@app.get("/api/infra/ssl")
+def infra_ssl_list(_: None = Depends(require_infra)):
+    return {"certificates": infra.list_certificates()}
+
+
+@app.post("/api/infra/ssl")
+def infra_ssl_obtain(body: SSLIn, _: None = Depends(require_infra)):
+    result = infra.obtain_certificate(body.subdomain, body.email)
+    sub = infra.validate_subdomain(body.subdomain)
+    rel = f"{settings.nginx_conf_subdir}/{sub}.conf"
+    git = _sync_repo(f"nginx: active le SSL pour {result['fqdn']}", [rel])
+    return {**result, "git": git}
+
+
+@app.get("/api/infra/git")
+def infra_git_status(_: None = Depends(require_infra)):
+    return infra.git_status()
+
+
+@app.post("/api/infra/git/push")
+def infra_git_push(_: None = Depends(require_infra)):
+    return infra.git_commit_and_push(
+        "infra: synchronisation manuelle depuis ENV Manager", paths=None, push=True
+    )
 
 
 # ------------------------ Front statique (servi sur /) -----------------------

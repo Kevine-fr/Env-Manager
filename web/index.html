@@ -72,6 +72,16 @@
       </div>
 
       <div class="topbar-actions">
+        <div class="view-switch" id="view-switch">
+          <button data-view="secrets" class="active" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <span>Secrets</span>
+          </button>
+          <button data-view="infra" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="8" rx="2"/><rect x="3" y="13" width="18" height="8" rx="2"/><path d="M7 7h.01M7 17h.01"/></svg>
+            <span>Infra</span>
+          </button>
+        </div>
         <div class="search">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="11" cy="11" r="7" /><path d="m21 21-4.3-4.3" />
@@ -92,7 +102,7 @@
       </div>
     </header>
 
-    <div class="layout">
+    <div class="layout" id="secrets-view">
       <!-- Liste des projets -->
       <aside class="sidebar" id="sidebar">
         <div class="sidebar-head">
@@ -115,6 +125,13 @@
         </div>
       </main>
     </div>
+
+    <!-- =================== INFRASTRUCTURE =================== -->
+    <section id="infra-view">
+      <div class="infra-wrap" id="infra-wrap">
+        <div class="note">Chargement de l'infrastructure…</div>
+      </div>
+    </section>
   </div>
 
   <!-- =================== MODALE D'ÉDITION / AJOUT =================== -->
@@ -154,8 +171,22 @@
     </div>
   </div>
 
+  <!-- =================== MODALE DE CONFIRMATION GÉNÉRIQUE =================== -->
+  <div id="confirm-modal" class="modal" hidden>
+    <div class="modal-backdrop" data-close></div>
+    <div class="modal-card">
+      <h3 id="confirm-title" class="danger-title">Confirmer</h3>
+      <p id="confirm-message" class="modal-sub"></p>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" data-close>Annuler</button>
+        <button class="btn btn-danger" id="confirm-ok">Confirmer</button>
+      </div>
+    </div>
+  </div>
+
   <div id="toast-stack" class="toast-stack"></div>
 
   <script src="/app.js"></script>
+  <script src="/infra.js"></script>
 </body>
 </html>

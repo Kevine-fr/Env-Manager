@@ -5,6 +5,11 @@ ENV PYTHONUNBUFFERED=1 \
 
 WORKDIR /app
 
+# Outils système : git (commit/push du dépôt Infrastructure) + ssh (push par clé).
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends git openssh-client ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
 # Dépendances (couche cache séparée)
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt

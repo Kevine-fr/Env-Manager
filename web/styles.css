@@ -146,6 +146,11 @@ textarea { resize: vertical; line-height: 1.5; }
   position: fixed; inset: 0;
   display: grid; place-items: center;
   overflow: hidden;
+  padding:
+    calc(20px + env(safe-area-inset-top, 0px))
+    calc(20px + env(safe-area-inset-right, 0px))
+    calc(20px + env(safe-area-inset-bottom, 0px))
+    calc(20px + env(safe-area-inset-left, 0px));
 }
 .login-grid {
   position: absolute; inset: -2px;
@@ -207,11 +212,13 @@ textarea { resize: vertical; line-height: 1.5; }
 .topbar {
   display: flex; align-items: center; justify-content: space-between;
   gap: 16px;
-  padding: 0 18px;
   padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: 0;
+  padding-left: calc(18px + env(safe-area-inset-left, 0px));
+  padding-right: calc(18px + env(safe-area-inset-right, 0px));
   height: calc(60px + env(safe-area-inset-top, 0px));
   border-bottom: 1px solid var(--line);
-  background: rgba(15, 19, 27, 0.86);
+  background: rgba(15, 19, 27, 0.92);
   backdrop-filter: blur(10px);
   position: sticky; top: 0; z-index: 20;
 }
@@ -389,7 +396,15 @@ textarea { resize: vertical; line-height: 1.5; }
 }
 
 /* ============================ MODALES =================================== */
-.modal { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; }
+.modal {
+  position: fixed; inset: 0; z-index: 50;
+  display: grid; place-items: center;
+  padding:
+    calc(16px + env(safe-area-inset-top, 0px))
+    calc(16px + env(safe-area-inset-right, 0px))
+    calc(16px + env(safe-area-inset-bottom, 0px))
+    calc(16px + env(safe-area-inset-left, 0px));
+}
 .modal-backdrop { position: absolute; inset: 0; background: rgba(5, 7, 10, 0.66); backdrop-filter: blur(3px); }
 .modal-card {
   position: relative;
@@ -461,7 +476,11 @@ textarea { resize: vertical; line-height: 1.5; }
 @media (max-width: 860px) {
   .menu-btn { display: inline-flex; }
 
-  .topbar { padding: 0 12px; gap: 8px; }
+  .topbar {
+    padding-left: calc(12px + env(safe-area-inset-left, 0px));
+    padding-right: calc(12px + env(safe-area-inset-right, 0px));
+    gap: 8px;
+  }
   .scan-meta, .dot-sep { display: none; }
   .topbar-title { font-size: 15px; }
   .topbar-brand { flex: none; gap: 9px; }
@@ -475,14 +494,16 @@ textarea { resize: vertical; line-height: 1.5; }
   .layout { grid-template-columns: 1fr; }
   .sidebar {
     position: fixed;
-    top: calc(60px + env(safe-area-inset-top, 0px)); bottom: 0; left: 0;
+    top: calc(60px + env(safe-area-inset-top, 0px)); bottom: 0;
+    left: env(safe-area-inset-left, 0px);
     width: min(82vw, 320px);
-    transform: translateX(-100%);
+    transform: translateX(calc(-100% - env(safe-area-inset-left, 0px)));
     transition: transform 0.24s cubic-bezier(0.16, 1, 0.3, 1);
     z-index: 30;
     box-shadow: var(--shadow);
   }
   .sidebar.mobile-open { transform: none; }
+  .sidebar .project-list { padding-bottom: calc(18px + env(safe-area-inset-bottom, 0px)); }
   .sidebar-backdrop { inset: calc(60px + env(safe-area-inset-top, 0px)) 0 0 0; }
   .sidebar-backdrop.show { display: block; }
 
@@ -502,7 +523,11 @@ textarea { resize: vertical; line-height: 1.5; }
   .row-actions { opacity: 1; justify-content: flex-end; }
   .k { font-size: 12.5px; }
 
-  .toast-stack { left: 14px; right: 14px; bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
+  .toast-stack {
+    left: calc(14px + env(safe-area-inset-left, 0px));
+    right: calc(14px + env(safe-area-inset-right, 0px));
+    bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+  }
   .toast { min-width: 0; max-width: none; }
 
   .modal-card { width: min(94vw, 480px); padding: 20px; }

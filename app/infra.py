@@ -520,8 +520,11 @@ def obtain_certificate(subdomain: str, email: str) -> dict:
     _ensure_dns_resolves(fqdn)
 
     client = get_docker()
-    host_www = host_path_of(repo_path() / settings.certbot_www_subdir)
-    host_conf = host_path_of(repo_path() / settings.certbot_conf_subdir)
+    # Chemins HÔTE du webroot et de la conf certbot. On privilégie une surcharge
+    # absolue (CERTBOT_*_HOST) — indispensable si le gateway nginx vit hors du
+    # dépôt (ex. /opt/gateway) — sinon on dérive depuis le dépôt Infrastructure.
+    host_www = settings.certbot_www_host or host_path_of(repo_path() / settings.certbot_www_subdir)
+    host_conf = settings.certbot_conf_host or host_path_of(repo_path() / settings.certbot_conf_subdir)
 
     command = [
         "certonly", "--webroot", "-w", "/var/www/certbot",

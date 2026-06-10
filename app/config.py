@@ -103,6 +103,11 @@ class Settings:
         self.nginx_conf_subdir: str = os.getenv("NGINX_CONF_SUBDIR", "nginx/conf.d")
         self.certbot_www_subdir: str = os.getenv("CERTBOT_WWW_SUBDIR", "certbot/www")
         self.certbot_conf_subdir: str = os.getenv("CERTBOT_CONF_SUBDIR", "certbot/conf")
+        # Surcharges en chemins HÔTE ABSOLUS (prioritaires sur les *_SUBDIR).
+        # À utiliser si le webroot / la conf certbot vivent hors du dépôt
+        # Infrastructure, ex. un gateway nginx déployé dans /opt/gateway.
+        self.certbot_www_host: str = os.getenv("CERTBOT_WWW_HOST", "")
+        self.certbot_conf_host: str = os.getenv("CERTBOT_CONF_HOST", "")
         self.certbot_image: str = os.getenv("CERTBOT_IMAGE", "certbot/certbot:latest")
 
         # Services dont on autorise le pilotage (start/stop/restart) depuis l'UI.

@@ -24,8 +24,7 @@ services:
       # Accès au démon Docker : up/down des services, reload nginx, certbot.
       # ⚠️ Équivaut à un accès root sur l'hôte — n'activez ce module qu'en confiance.
       - /var/run/docker.sock:/var/run/docker.sock
-      # (Optionnel) Clé SSH de déploiement pour le git push (si pas de token) :
-      # - ${GIT_SSH_KEY_HOST:-./infra_deploy_key}:/keys/deploy_key:ro
+      - ${GIT_SSH_KEY_HOST:-./infra_deploy_key}:/keys/deploy_key:ro
     networks:
       - web
     # --- Option A (recommandée) : derrière votre gateway Nginx existant ---

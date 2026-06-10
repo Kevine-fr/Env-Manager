@@ -299,8 +299,8 @@ async function serviceAction(name, action, btn) {
   const labels = { start: "Démarrage…", stop: "Arrêt…", restart: "Redémarrage…" };
   setBusy(btn, true, labels[action] || "…");
   try {
-    await api("/api/infra/services/action", { method: "POST", body: { name, action } });
-    toast(`${name} : ${action} OK.`);
+    const r = await api("/api/infra/services/action", { method: "POST", body: { name, action } });
+    toast(r && r.message ? r.message : `${name} : ${action} OK.`);
     await refreshServices();
   } catch (e) {
     toast(e.message, "error");

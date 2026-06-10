@@ -651,14 +651,19 @@ textarea { resize: vertical; line-height: 1.5; }
 .svc-actions { display: flex; gap: 7px; flex: none; }
 
 /* --------------------------------- Formulaires infra -------------------- */
-.form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; align-items: end; }
-.field .suffix-input { display: flex; align-items: stretch; }
-.field .suffix-input input { border-top-right-radius: 0; border-bottom-right-radius: 0; min-width: 0; }
+/* Champs en flex-wrap : ils s'empilent d'eux-mêmes quand la place manque,
+   sans dépendre d'un point de rupture précis. */
+.form-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
+.form-row > .field { flex: 1 1 220px; min-width: 0; }
+.field .suffix-input { display: flex; flex-wrap: wrap; gap: 6px; align-items: stretch; }
+.field .suffix-input input { flex: 2 1 130px; min-width: 0; }
 .field .suffix-input .suffix {
+  flex: 1 1 130px; min-width: 0; justify-content: center;
   display: inline-flex; align-items: center; padding: 0 11px;
-  background: var(--panel-2); border: 1px solid var(--line); border-left: none;
-  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
-  color: var(--muted); font-family: var(--mono); font-size: 12px; white-space: nowrap;
+  background: var(--panel-2); border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  color: var(--muted); font-family: var(--mono); font-size: 12px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .form-actions { display: flex; justify-content: flex-end; gap: 9px; }
 
@@ -695,20 +700,9 @@ textarea { resize: vertical; line-height: 1.5; }
   .conf-actions { justify-content: flex-end; }
   .card-head { flex-wrap: wrap; }
 
-  /* Formulaires : une colonne, et l'input passe au-dessus de son suffixe
-     (domaine) pour ne plus être écrasé sur écran étroit. */
-  .form-row { grid-template-columns: 1fr; }
-  .field .suffix-input { flex-wrap: wrap; }
-  .field .suffix-input input {
-    flex: 1 1 100%;
-    border-top-right-radius: var(--radius-sm);
-    border-bottom-right-radius: var(--radius-sm);
-  }
-  .field .suffix-input .suffix {
-    flex: 1 1 100%;
-    margin-top: 6px;
-    justify-content: center;
-    border-left: 1px solid var(--line);
-    border-radius: var(--radius-sm);
-  }
+  /* Sur écran étroit, chaque champ occupe toute la largeur : l'input et son
+     suffixe (domaine) s'empilent au lieu de s'écraser. */
+  .form-row > .field { flex: 1 1 100%; }
+  .field .suffix-input input,
+  .field .suffix-input .suffix { flex: 1 1 100%; }
 }

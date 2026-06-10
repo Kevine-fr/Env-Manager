@@ -249,13 +249,25 @@ def service_action(name: str, action: str) -> dict:
             raise InfraError(f"Conteneur introuvable : {n}.", 404)
 
     if action == "start":
+        # Ne démarre que si le service est arrêté.
+        svc = _get(name)
+        if svc.status == "running":
+            return {"ok": True, "name": name, "action": action, "skipped": True,
+                    "message": f"{_service_label(name)} est déjà actif.",
+                    "service": _container_state(client, name)}
         # Démarrer d'abord les dépendances, puis le service.
         for d in deps:
             _get(d).start()
-        _get(name).start()
+        svc.start()
     elif action == "stop":
+        # N'arrête que si le service tourne.
+        svc = _get(name)
+        if svc.status != "running":
+            return {"ok": True, "name": name, "action": action, "skipped": True,
+                    "message": f"{_service_label(name)} est déjà arrêté.",
+                    "service": _container_state(client, name)}
         # Arrêter le service, puis ses dépendances.
-        _get(name).stop()
+        svc.stop()
         for d in deps:
             _get(d).stop()
     else:  # restart

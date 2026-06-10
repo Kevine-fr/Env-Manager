@@ -22,7 +22,10 @@ from __future__ import annotations
 import logging
 import os
 import re
+import shutil
+import socket
 import subprocess
+import tempfile
 from pathlib import Path
 
 from .config import settings
@@ -475,6 +478,23 @@ def list_certificates() -> list[dict]:
     return out
 
 
+def _ensure_dns_resolves(fqdn: str) -> None:
+    """Échoue tôt si le sous-domaine ne résout pas (A ou AAAA).
+
+    Sans cela, le challenge HTTP-01 de Let's Encrypt renverrait un NXDOMAIN et
+    certbot afficherait l'obscur « Some challenges have failed ».
+    """
+    try:
+        socket.getaddrinfo(fqdn, None)
+    except socket.gaierror:
+        raise InfraError(
+            f"{fqdn} ne résout pas en DNS (NXDOMAIN). Ajoutez un enregistrement "
+            "A (ou un wildcard *) pointant vers l'IP publique du VPS, attendez la "
+            "propagation, puis réessayez.",
+            400,
+        )
+
+
 def obtain_certificate(subdomain: str, email: str) -> dict:
     """Lance certbot (webroot) puis bascule le .conf en HTTPS et recharge nginx."""
     sub = validate_subdomain(subdomain)
@@ -495,6 +515,10 @@ def obtain_certificate(subdomain: str, email: str) -> dict:
         raise InfraError("Impossible de déterminer l'upstream du .conf existant.", 400)
     container, _, port = upstream.partition(":")
 
+    # Vérifie que le sous-domaine résout AVANT de lancer certbot : le challenge
+    # HTTP-01 échouerait sinon avec un « Some challenges have failed » obscur.
+    _ensure_dns_resolves(fqdn)
+
     client = get_docker()
     host_www = host_path_of(repo_path() / settings.certbot_www_subdir)
     host_conf = host_path_of(repo_path() / settings.certbot_conf_subdir)
@@ -505,6 +529,7 @@ def obtain_certificate(subdomain: str, email: str) -> dict:
         "--email", mail,
         "--agree-tos", "--no-eff-email",
         "--non-interactive", "--keep-until-expiring",
+        "-v",  # détaille la raison exacte d'un challenge échoué (DNS, port 80…)
     ]
     try:
         import docker  # type: ignore
@@ -608,28 +633,59 @@ def _push(repo: Path) -> str:
     method = _push_method()
     branch = settings.git_branch
 
-    if method == "https-token":
-        url = (
-            f"https://x-access-token:{settings.github_token}"
-            f"@github.com/{settings.git_repo_slug}.git"
-        )
-        res = _run_git(["push", url, f"HEAD:{branch}"], repo)
-    elif method == "ssh-key":
-        env = {
-            "GIT_SSH_COMMAND": (
-                f"ssh -i {settings.git_ssh_key_path} "
-                "-o StrictHostKeyChecking=accept-new -o IdentitiesOnly=yes"
+    key_copy: str | None = None
+    try:
+        if method == "https-token":
+            url = (
+                f"https://x-access-token:{settings.github_token}"
+                f"@github.com/{settings.git_repo_slug}.git"
             )
-        }
-        res = _run_git(["push", settings.git_remote, f"HEAD:{branch}"], repo, env=env)
-    else:
-        res = _run_git(["push", settings.git_remote, f"HEAD:{branch}"], repo)
+            res = _run_git(["push", url, f"HEAD:{branch}"], repo)
+        elif method == "ssh-key":
+            # La clé est souvent montée :ro avec les permissions de l'hôte (ex.
+            # 0755). SSH refuse toute clé privée accessible par d'autres et
+            # l'ignore. On la recopie donc dans un fichier privé en 0600.
+            key_copy = _private_key_copy(settings.git_ssh_key_path)
+            env = {
+                "GIT_SSH_COMMAND": (
+                    f"ssh -i {key_copy} "
+                    "-o StrictHostKeyChecking=accept-new -o IdentitiesOnly=yes"
+                )
+            }
+            res = _run_git(["push", settings.git_remote, f"HEAD:{branch}"], repo, env=env)
+        else:
+            res = _run_git(["push", settings.git_remote, f"HEAD:{branch}"], repo)
+    finally:
+        if key_copy:
+            try:
+                os.unlink(key_copy)
+            except OSError:
+                pass
 
     if res.returncode != 0:
         # Ne jamais renvoyer l'URL (peut contenir le token).
         stderr = (res.stderr or "").replace(settings.github_token or "\0", "***")
         raise InfraError("Échec du git push :\n" + stderr.strip(), 502)
     return "Push effectué."
+
+
+def _private_key_copy(src: str) -> str:
+    """Copie la clé SSH dans un fichier temporaire lisible par le seul
+    propriétaire (0600), exigé par OpenSSH. Renvoie le chemin de la copie."""
+    if not src or not Path(src).is_file():
+        raise InfraError(f"Clé SSH introuvable : {src}.", 500)
+    fd, dst = tempfile.mkstemp(prefix="deploy_key_")
+    try:
+        os.close(fd)
+        shutil.copyfile(src, dst)
+        os.chmod(dst, 0o600)
+    except OSError as e:
+        try:
+            os.unlink(dst)
+        except OSError:
+            pass
+        raise InfraError(f"Impossible de préparer la clé SSH : {e}.", 500)
+    return dst
 
 
 def git_commit_and_push(message: str, paths: list[str] | None = None,

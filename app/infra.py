@@ -532,8 +532,12 @@ def _run_git(args: list[str], cwd: Path, env: dict | None = None) -> subprocess.
     full_env = os.environ.copy()
     if env:
         full_env.update(env)
+    # Le dépôt appartient à l'utilisateur du VPS (ex. kevine), mais le conteneur
+    # tourne en root : git refuserait sinon ("detected dubious ownership").
+    # On déclare le dépôt comme sûr sur CHAQUE commande (persistant, suit le chemin).
+    safe = ["-c", f"safe.directory={cwd}"]
     return subprocess.run(
-        ["git", *args],
+        ["git", *safe, *args],
         cwd=str(cwd),
         env=full_env,
         capture_output=True,

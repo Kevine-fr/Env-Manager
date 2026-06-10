@@ -78,6 +78,9 @@ jobs:
           INFRA_ENABLED=${{ secrets.INFRA_ENABLED }}
           INFRA_REPO_PATH=${{ secrets.INFRA_REPO_PATH }}
 
+          CERTBOT_WWW_HOST=${{ secrets.CERTBOT_WWW_HOST }}
+          CERTBOT_CONF_HOST=${{ secrets.CERTBOT_CONF_HOST }}
+
           ENVEOF
 
           echo "Demarrage des conteneurs..."

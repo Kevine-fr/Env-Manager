@@ -102,7 +102,7 @@ body {
 .btn-danger:hover { background: var(--danger-glow); }
 
 .btn-block { width: 100%; justify-content: center; padding: 12px; font-size: 14px; }
-.btn:disabled { opacity: 0.55; cursor: default; }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
 
 .icon-btn {
   width: 30px; height: 30px;
@@ -694,4 +694,21 @@ textarea { resize: vertical; line-height: 1.5; }
   .conf-item, .cert-item { flex-direction: column; align-items: stretch; }
   .conf-actions { justify-content: flex-end; }
   .card-head { flex-wrap: wrap; }
+
+  /* Formulaires : une colonne, et l'input passe au-dessus de son suffixe
+     (domaine) pour ne plus être écrasé sur écran étroit. */
+  .form-row { grid-template-columns: 1fr; }
+  .field .suffix-input { flex-wrap: wrap; }
+  .field .suffix-input input {
+    flex: 1 1 100%;
+    border-top-right-radius: var(--radius-sm);
+    border-bottom-right-radius: var(--radius-sm);
+  }
+  .field .suffix-input .suffix {
+    flex: 1 1 100%;
+    margin-top: 6px;
+    justify-content: center;
+    border-left: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+  }
 }

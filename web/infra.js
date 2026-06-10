@@ -267,19 +267,30 @@ function renderService(svc) {
   const depsLine = (svc.deps || [])
     .map((d) => `${escapeHtml(d.label)} : ${d.running ? "actif" : escapeHtml(d.status)}`)
     .join(" · ");
+
+  // Démarrer seulement si le service est arrêté ; Arrêter/Redémarrer seulement
+  // s'il tourne. Si le conteneur n'existe pas, tout est désactivé.
+  const up = svc.running;
+  const absent = !svc.exists;
+  const dis = { start: absent || up, restart: absent || !up, stop: absent || !up };
+  const off = (k) => (dis[k] ? "disabled" : "");
+
   row.innerHTML = `
     <div class="svc-info">
       <div class="svc-name"><strong>${escapeHtml(svc.label)}</strong>${statusBadge(svc)}</div>
       <span class="svc-sub">${escapeHtml(svc.image || svc.name)}${depsLine ? " — " + depsLine : ""}</span>
     </div>
     <div class="svc-actions">
-      <button class="btn btn-ghost" data-act="start" title="Démarrer">${IIC.play}<span>Démarrer</span></button>
-      <button class="btn btn-ghost" data-act="restart" title="Redémarrer">${IIC.restart}</button>
-      <button class="btn btn-danger" data-act="stop" title="Arrêter">${IIC.stop}<span>Arrêter</span></button>
+      <button class="btn btn-ghost" data-act="start" title="Démarrer" ${off("start")}>${IIC.play}<span>Démarrer</span></button>
+      <button class="btn btn-ghost" data-act="restart" title="Redémarrer" ${off("restart")}>${IIC.restart}</button>
+      <button class="btn btn-danger" data-act="stop" title="Arrêter" ${off("stop")}>${IIC.stop}<span>Arrêter</span></button>
     </div>`;
 
   row.querySelectorAll("button[data-act]").forEach((btn) => {
-    btn.addEventListener("click", () => serviceAction(svc.name, btn.dataset.act, btn));
+    btn.addEventListener("click", () => {
+      if (btn.disabled) return;
+      serviceAction(svc.name, btn.dataset.act, btn);
+    });
   });
   return row;
 }

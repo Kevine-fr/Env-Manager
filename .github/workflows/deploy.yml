@@ -86,7 +86,7 @@ jobs:
 
           echo "Demarrage des conteneurs..."
           docker compose build --no-cache env-manager
-          docker compose up -d
+          docker compose up -d --build
 
           docker exec nginx nginx -s reload || true
 

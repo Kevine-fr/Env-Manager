@@ -713,3 +713,76 @@ textarea { resize: vertical; line-height: 1.5; }
   .field .suffix-input input,
   .field .suffix-input .suffix { flex: 1 1 100%; }
 }
+
+/* =========================================================================
+   Animations & micro-interactions
+   ========================================================================= */
+@keyframes fadeUp    { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+@keyframes fadeIn    { from { opacity: 0; } to { opacity: 1; } }
+@keyframes viewIn    { from { opacity: 0; transform: translateY(8px) scale(0.995); } to { opacity: 1; transform: none; } }
+@keyframes slideDown { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
+@keyframes floaty    { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+@keyframes livePulse { 0% { box-shadow: 0 0 0 0 var(--pulse); } 70%, 100% { box-shadow: 0 0 0 6px transparent; } }
+
+/* — Entrée de la barre supérieure (une fois, à l'ouverture de l'app) — */
+.topbar-brand   { animation: slideDown 0.45s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.topbar-actions { animation: slideDown 0.45s cubic-bezier(0.16, 1, 0.3, 1) 0.06s both; }
+
+/* — Transition entre les vues Secrets / Infra (au basculement seulement) — */
+#app-view:not(.view-infra) #secrets-view,
+#app-view.view-infra #infra-view { animation: viewIn 0.34s cubic-bezier(0.16, 1, 0.3, 1); }
+
+/* — Entrée échelonnée des cartes Infra (rendues une fois au chargement) — */
+.infra-wrap > .card { animation: fadeUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.infra-wrap > .card:nth-of-type(1) { animation-delay: 0.04s; }
+.infra-wrap > .card:nth-of-type(2) { animation-delay: 0.10s; }
+.infra-wrap > .card:nth-of-type(3) { animation-delay: 0.16s; }
+.infra-wrap > .card:nth-of-type(4) { animation-delay: 0.22s; }
+.infra-wrap > .card:nth-of-type(5) { animation-delay: 0.28s; }
+.infra-wrap > .card:nth-of-type(6) { animation-delay: 0.34s; }
+
+/* — Entrée échelonnée du formulaire de connexion — */
+.login-form > * { animation: fadeUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.login-form > *:nth-child(1) { animation-delay: 0.06s; }
+.login-form > *:nth-child(2) { animation-delay: 0.12s; }
+.login-form > *:nth-child(3) { animation-delay: 0.18s; }
+.login-form > *:nth-child(4) { animation-delay: 0.24s; }
+.login-foot { animation: fadeIn 0.6s ease 0.3s both; }
+.brand-mark { animation: floaty 5s ease-in-out infinite; }
+
+/* — Boutons : relief au survol / enfoncement au clic — */
+.btn:hover:not(:disabled)  { transform: translateY(-1px); }
+.btn:active:not(:disabled) { transform: translateY(1px); }
+
+/* — Cartes & éléments de liste : léger soulèvement au survol — */
+.card { transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease; }
+.card:hover { transform: translateY(-2px); border-color: #2c3849; box-shadow: 0 16px 40px -24px rgba(0, 0, 0, 0.8); }
+.svc, .conf-item, .cert-item { transition: transform 0.16s ease, border-color 0.16s ease, background 0.16s ease; }
+.svc:hover, .conf-item:hover, .cert-item:hover { transform: translateY(-1px); border-color: #2c3849; }
+
+/* — Items de projet : léger glissement au survol — */
+.project-item { transition: background 0.12s ease, border-color 0.12s ease, transform 0.12s ease; }
+.project-item:hover { transform: translateX(2px); }
+
+/* — Bascule de vue : transition douce + retour tactile — */
+.view-switch button { transition: background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease, transform 0.12s ease; }
+.view-switch button:active { transform: scale(0.96); }
+
+/* — Pastilles « en vie » : services actifs & projet sélectionné — */
+.badge.ok .dot { --pulse: rgba(86, 214, 139, 0.5); animation: livePulse 2.2s ease-in-out infinite; }
+.project-item.active .project-dot:not(.empty) { --pulse: rgba(110, 168, 254, 0.5); animation: livePulse 2.2s ease-in-out infinite; }
+
+/* — Voiles & révélations — */
+.modal-backdrop { animation: fadeIn 0.2s ease; }
+.sidebar-backdrop.show { animation: fadeIn 0.2s ease; }
+.v.revealed { animation: fadeIn 0.18s ease; }
+.empty-glyph { animation: floaty 6s ease-in-out infinite; }
+
+/* — Respect de « prefers-reduced-motion » : on neutralise tout — */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

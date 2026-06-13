@@ -4,7 +4,7 @@
    Les routes /api/* (qui transportent les secrets) ne sont JAMAIS interceptées
    ni mises en cache. Incrémentez CACHE pour forcer une mise à jour.
    ========================================================================= */
-const CACHE = "envmgr-shell-v9";
+const CACHE = "envmgr-shell-v10";
 
 const SHELL = [
   "/",
@@ -59,19 +59,34 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Ressources statiques : cache d'abord + rafraîchissement réseau en arrière-plan.
-  event.respondWith(
-    caches.match(req).then((cached) => {
-      const network = fetch(req)
-        .then((res) => {
+  // Icônes / images / polices : changent rarement → cache d'abord.
+  if (/\.(png|jpe?g|svg|gif|ico|webp|woff2?)$/i.test(url.pathname)) {
+    event.respondWith(
+      caches.match(req).then((cached) =>
+        cached ||
+        fetch(req).then((res) => {
           if (res && res.status === 200) {
             const copy = res.clone();
             caches.open(CACHE).then((c) => c.put(req, copy));
           }
           return res;
         })
-        .catch(() => cached);
-      return cached || network;
-    })
+      )
+    );
+    return;
+  }
+
+  // Coquille HTML/CSS/JS : réseau d'abord pour toujours refléter le dernier
+  // déploiement, repli sur le cache uniquement hors-ligne.
+  event.respondWith(
+    fetch(req)
+      .then((res) => {
+        if (res && res.status === 200) {
+          const copy = res.clone();
+          caches.open(CACHE).then((c) => c.put(req, copy));
+        }
+        return res;
+      })
+      .catch(() => caches.match(req))
   );
 });

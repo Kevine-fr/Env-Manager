@@ -691,6 +691,65 @@ def _private_key_copy(src: str) -> str:
     return dst
 
 
+def _pull(repo: Path) -> str | None:
+    """Récupère + rebase la dernière version du distant AVANT de pousser, avec
+    la même authentification que le push (clé SSH ou token). Renvoie un message
+    sans secret, ou None s'il n'y a rien à synchroniser. Lève InfraError si le
+    pull échoue (conflit, réseau…), en laissant le dépôt propre."""
+    # Pas encore de branche distante connue (ex. tout premier push) : rien à tirer.
+    if not _remote_branch_exists(repo):
+        return None
+
+    method = _push_method()
+    branch = settings.git_branch
+    # --autostash : met de côté d'éventuelles modifs non commitées le temps du
+    # rebase puis les ré-applique, pour ne pas bloquer sur un arbre « sale ».
+    pull = ["pull", "--rebase", "--autostash"]
+
+    key_copy: str | None = None
+    try:
+        if method == "https-token":
+            url = (
+                f"https://x-access-token:{settings.github_token}"
+                f"@github.com/{settings.git_repo_slug}.git"
+            )
+            res = _run_git([*pull, url, branch], repo)
+        elif method == "ssh-key":
+            key_copy = _private_key_copy(settings.git_ssh_key_path)
+            env = {
+                "GIT_SSH_COMMAND": (
+                    f"ssh -i {key_copy} "
+                    "-o StrictHostKeyChecking=accept-new -o IdentitiesOnly=yes"
+                )
+            }
+            res = _run_git([*pull, settings.git_remote, branch], repo, env=env)
+        else:
+            res = _run_git([*pull, settings.git_remote, branch], repo)
+    finally:
+        if key_copy:
+            try:
+                os.unlink(key_copy)
+            except OSError:
+                pass
+
+    if res.returncode != 0:
+        # Un rebase peut rester en cours (conflit) : on le défait pour laisser
+        # le dépôt dans un état propre.
+        _run_git(["rebase", "--abort"], repo)
+        stderr = (res.stderr or "").replace(settings.github_token or "\0", "***")
+        raise InfraError("Échec du git pull (synchro avant push) :\n" + stderr.strip(), 502)
+    return "Synchronisé avec le distant."
+
+
+def _remote_branch_exists(repo: Path) -> bool:
+    """Vrai si la branche de suivi distante est connue localement."""
+    res = _run_git(
+        ["rev-parse", "--verify", "--quiet", f"{settings.git_remote}/{settings.git_branch}"],
+        repo,
+    )
+    return res.returncode == 0
+
+
 def git_commit_and_push(message: str, paths: list[str] | None = None,
                         push: bool | None = None) -> dict:
     ok, err = git_available()
@@ -724,9 +783,14 @@ def git_commit_and_push(message: str, paths: list[str] | None = None,
     do_push = settings.infra_auto_push if push is None else push
     pushed = False
     push_msg = None
-    if do_push and (committed or _ahead_of_remote(repo)):
-        push_msg = _push(repo)
-        pushed = True
+    if do_push:
+        # On récupère d'abord la dernière version du distant (rebase) pour ne
+        # jamais pousser par-dessus des commits absents en local et éviter les
+        # rejets « non-fast-forward ».
+        _pull(repo)
+        if committed or _ahead_of_remote(repo):
+            push_msg = _push(repo)
+            pushed = True
 
     return {
         "ok": True,

@@ -50,6 +50,14 @@ jobs:
           git fetch origin --prune
           git reset --hard origin/main
 
+          echo "Calcul de la version..."
+          BASE_VERSION=$(tr -d '[:space:]' < VERSION 2>/dev/null || true)
+          [ -n "$BASE_VERSION" ] || BASE_VERSION="1.0"
+          PATCH=$(git rev-list --count HEAD)
+          APP_VERSION="${BASE_VERSION}.${PATCH}"
+          APP_COMMIT=$(git rev-parse --short HEAD)
+          echo "Version : ${APP_VERSION} (${APP_COMMIT})"
+
           echo "Generation du .env..."
 
           cat > .env << 'ENVEOF'
@@ -83,6 +91,13 @@ jobs:
           CERTBOT_CONF_HOST=${{ secrets.CERTBOT_CONF_HOST }}
 
           ENVEOF
+
+          # Version calculee plus haut : ajoutee hors du heredoc (qui est quote
+          # et n'expanserait pas les variables shell).
+          {
+            echo "APP_VERSION=${APP_VERSION}"
+            echo "APP_COMMIT=${APP_COMMIT}"
+          } >> .env
 
           echo "Demarrage des conteneurs..."
           docker compose build --no-cache env-manager

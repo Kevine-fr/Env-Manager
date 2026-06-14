@@ -439,8 +439,23 @@ function bind() {
   });
 }
 
+async function loadVersion() {
+  // Endpoint public : fonctionne avant connexion (écran de login) et dans l'app.
+  try {
+    const v = await api("/api/version");
+    const label = "v" + v.version + (v.commit ? " · " + v.commit : "");
+    document.querySelectorAll("[data-version]").forEach((n) => {
+      n.textContent = label;
+      n.setAttribute("title", "Version déployée : " + label);
+    });
+  } catch (_) {
+    /* affichage non bloquant : on garde le tiret par défaut */
+  }
+}
+
 async function boot() {
   bind();
+  loadVersion();
   registerServiceWorker();
   if (state.token) {
     try {

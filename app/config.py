@@ -43,6 +43,12 @@ class Settings:
             os.getenv("WEB_DIR", str(Path(__file__).resolve().parent.parent / "web"))
         ).expanduser().resolve()
 
+        # Version applicative : injectée au déploiement (APP_VERSION = X.Y.Z,
+        # APP_COMMIT = sha court), "X.Y.dev" en local. Sert à afficher dans l'UI
+        # la version réellement déployée pour vérifier ce qui tourne en prod.
+        self.app_version: str = os.getenv("APP_VERSION") or self._local_version()
+        self.app_commit: str = os.getenv("APP_COMMIT", "")
+
         # Authentification admin (obligatoire).
         self.admin_password: str = os.getenv("ADMIN_PASSWORD", "")
         self.admin_username: str = os.getenv("ADMIN_USERNAME", "admin")
@@ -124,6 +130,16 @@ class Settings:
         self.git_ssh_key_path: str = os.getenv("GIT_SSH_KEY_PATH", "")
         # Pousser automatiquement après chaque modif (.conf, SSL) ?
         self.infra_auto_push: bool = _get_bool("INFRA_AUTO_PUSH", True)
+
+    @staticmethod
+    def _local_version() -> str:
+        """Version de repli hors déploiement : lit le fichier VERSION
+        (MAJOR.MINOR) et suffixe « .dev »."""
+        try:
+            base = (Path(__file__).resolve().parent.parent / "VERSION").read_text().strip()
+        except OSError:
+            base = ""
+        return f"{base}.dev" if base else "dev"
 
     @property
     def json_path(self) -> Path:

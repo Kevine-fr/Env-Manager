@@ -74,7 +74,7 @@ async def lifespan(_: FastAPI):
         scheduler.shutdown(wait=False)
 
 
-app = FastAPI(title="ENV Manager", version="1.0.0", lifespan=lifespan)
+app = FastAPI(title="ENV Manager", version=settings.app_version, lifespan=lifespan)
 
 
 # ----------------------------- Schémas (entrées) -----------------------------
@@ -135,6 +135,12 @@ def health():
         "deploy_root": str(settings.deploy_root),
         "scan_interval_minutes": settings.scan_interval_minutes,
     }
+
+
+@app.get("/api/version")
+def version():
+    """Version déployée (public) : affichée dans l'UI pour vérifier ce qui tourne."""
+    return {"version": settings.app_version, "commit": settings.app_commit}
 
 
 @app.post("/api/login")

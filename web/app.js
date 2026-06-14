@@ -443,10 +443,16 @@ async function loadVersion() {
   // Endpoint public : fonctionne avant connexion (écran de login) et dans l'app.
   try {
     const v = await api("/api/version");
-    const label = "v" + v.version + (v.commit ? " · " + v.commit : "");
+    const num = "v" + v.version;
+    const sha = v.commit ? " · " + v.commit : "";
+    // Numéro et hash séparés : sur petit écran on masque le hash (puis tout le
+    // badge) en CSS, sans perdre le numéro de version le plus longtemps possible.
+    const html =
+      `<span class="ver-num">${escapeHtml(num)}</span>` +
+      (sha ? `<span class="ver-sha">${escapeHtml(sha)}</span>` : "");
     document.querySelectorAll("[data-version]").forEach((n) => {
-      n.textContent = label;
-      n.setAttribute("title", "Version déployée : " + label);
+      n.innerHTML = html;
+      n.setAttribute("title", "Version déployée : " + num + sha);
     });
   } catch (_) {
     /* affichage non bloquant : on garde le tiret par défaut */

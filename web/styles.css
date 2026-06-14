@@ -552,11 +552,22 @@ textarea { resize: vertical; line-height: 1.5; }
   .modal-card { width: min(94vw, 480px); padding: 20px; }
 }
 
+/* Téléphones larges : on lâche d'abord le hash de commit pour rendre de la
+   place à la recherche (le numéro de version reste lisible). */
+@media (max-width: 600px) {
+  .topbar .app-version .ver-sha { display: none; }
+  .topbar .app-version { padding: 2px 7px; }
+}
+
 @media (max-width: 480px) {
   .topbar-title { display: none; }
   .rescan-label { display: none; }              /* bouton scan en icône seule */
   #rescan-btn { padding: 9px 11px; }
   .envfile-path code { font-size: 12px; }
+
+  /* Plus de place : on masque le badge version dans la barre (il reste visible
+     sur l'écran de connexion). La recherche garde ainsi une largeur utilisable. */
+  .topbar .app-version { display: none; }
 }
 
 /* =========================================================================

@@ -596,7 +596,9 @@ textarea { resize: vertical; line-height: 1.5; }
 #app-view.view-infra .topbar-spacer { display: block; }
 #app-view.view-infra .topbar-actions { flex: none; }
 
-#infra-view { display: none; }
+/* #infra-view doit scroller en interne (comme #secrets-view) pour ne pas créer
+   de scrollbar au niveau du document, qui décalerait la barre du haut. */
+#infra-view { display: none; flex: 1; min-height: 0; overflow-y: auto; }
 #app-view.view-infra #secrets-view { display: none; }
 #app-view.view-infra #infra-view { display: block; }
 

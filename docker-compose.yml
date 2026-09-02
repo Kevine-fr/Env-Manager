@@ -1,3 +1,5 @@
+# Plafonds de ressources (VPS mutualisé 8 vCPU / 24 Go) : voir CAPACITY.md dans
+# le dépôt Infrastructure. mem_limit est un garde-fou, pas une réservation.
 services:
   env-manager:
     build: .
@@ -17,6 +19,14 @@ services:
       # === Module Infrastructure ===
       - /var/run/docker.sock:/var/run/docker.sock
       - ${GIT_SSH_KEY_HOST:-./infra_deploy_key}:/keys/deploy_key:ro
+    mem_limit: 384m
+    cpus: 1
+    cpu_shares: 1024
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     networks:
       - web
 

@@ -4,3 +4,7 @@ python-dotenv==1.2.2
 PyJWT==2.7.0
 APScheduler==3.11.2
 docker==7.1.0
+# Métriques Prometheus exposées sur /metrics (dashboards Grafana du VPS).
+# L'application démarre même si cette dépendance manque : l'import est protégé
+# dans app/main.py, seul l'endpoint /metrics disparaît alors.
+prometheus-fastapi-instrumentator==8.1.0

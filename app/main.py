@@ -77,6 +77,27 @@ async def lifespan(_: FastAPI):
 app = FastAPI(title="ENV Manager", version=settings.app_version, lifespan=lifespan)
 
 
+# ------------------------- Métriques Prometheus ------------------------------
+# Expose `GET /metrics` (requêtes, latences par route, CPU/RSS du process) pour
+# le Prometheus du VPS, qui scrute `env-manager:8000` via le réseau Docker.
+# L'import est volontairement tolérant : si la dépendance venait à manquer dans
+# une image, l'application doit démarrer quand même — la supervision n'est pas
+# une raison de mettre le gestionnaire d'environnements à terre.
+try:
+    from prometheus_fastapi_instrumentator import Instrumentator
+
+    Instrumentator(
+        # Codes HTTP exacts plutôt que « 2xx » : sinon impossible de distinguer
+        # un 401 d'un 404 dans les dashboards.
+        should_group_status_codes=False,
+        excluded_handlers=["/metrics"],
+    ).instrument(app).expose(app, include_in_schema=False)
+except ImportError:  # pragma: no cover
+    logger.warning(
+        "prometheus-fastapi-instrumentator absent : endpoint /metrics désactivé"
+    )
+
+
 # ----------------------------- Schémas (entrées) -----------------------------
 class LoginIn(BaseModel):
     username: str = Field(default="admin")

@@ -12,11 +12,14 @@ Le front (web/) est servi sur /.
 from __future__ import annotations
 
 import logging
+import threading
+import time
+from collections import defaultdict, deque
 from contextlib import asynccontextmanager
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
@@ -39,10 +42,69 @@ logger = logging.getLogger("env-manager")
 
 scheduler = BackgroundScheduler(timezone="UTC")
 
+# Le scan planifié (thread APScheduler) et une édition depuis l'UI écrivent
+# tous deux envs.json : sans verrou, l'édition relit l'ancien instantané
+# pendant que le scan écrit le nouveau, et le dernier qui écrit efface
+# l'autre. Un seul écrivain à la fois.
+_snapshot_lock = threading.Lock()
+
+
+class LimiteurConnexion:
+    """Limite les échecs de connexion par adresse IP (fenêtre glissante).
+
+    Un seul mot de passe protège tous les secrets du VPS : sans limite,
+    /api/login se laisse essayer à la vitesse du réseau. Après
+    `max_echecs` échecs en `fenetre_s` secondes, l'adresse reçoit 429
+    jusqu'à ce que les plus anciens échecs sortent de la fenêtre.
+    """
+
+    def __init__(self, max_echecs: int = 10, fenetre_s: int = 900) -> None:
+        self.max_echecs = max_echecs
+        self.fenetre_s = fenetre_s
+        self._echecs: dict[str, deque[float]] = defaultdict(deque)
+        self._verrou = threading.Lock()
+
+    def _purger(self, ip: str, maintenant: float) -> deque[float]:
+        file = self._echecs[ip]
+        while file and maintenant - file[0] > self.fenetre_s:
+            file.popleft()
+        return file
+
+    def bloque(self, ip: str, maintenant: float | None = None) -> bool:
+        maintenant = time.monotonic() if maintenant is None else maintenant
+        with self._verrou:
+            return len(self._purger(ip, maintenant)) >= self.max_echecs
+
+    def echec(self, ip: str, maintenant: float | None = None) -> None:
+        maintenant = time.monotonic() if maintenant is None else maintenant
+        with self._verrou:
+            self._purger(ip, maintenant).append(maintenant)
+
+    def reussite(self, ip: str) -> None:
+        with self._verrou:
+            self._echecs.pop(ip, None)
+
+
+limiteur_connexion = LimiteurConnexion()
+
+
+def _ip_client(request: Request) -> str:
+    # Derrière le nginx du VPS, l'adresse du client est dans X-Real-IP /
+    # X-Forwarded-For ; sans eux, tous les clients auraient l'IP de nginx et
+    # un seul attaquant bloquerait tout le monde.
+    reel = request.headers.get("x-real-ip")
+    if reel:
+        return reel.strip()
+    transmis = request.headers.get("x-forwarded-for")
+    if transmis:
+        return transmis.split(",")[0].strip()
+    return request.client.host if request.client else "inconnu"
+
 
 def _scheduled_scan() -> None:
     try:
-        snap = run_scan()
+        with _snapshot_lock:
+            snap = run_scan()
         logger.info(
             "Scan planifié OK : %d projets, %d variables.",
             snap["project_count"],
@@ -165,20 +227,32 @@ def version():
 
 
 @app.post("/api/login")
-def login(body: LoginIn):
+def login(body: LoginIn, request: Request):
+    ip = _ip_client(request)
+    if limiteur_connexion.bloque(ip):
+        logger.warning("Connexion refusée (trop d'échecs) depuis %s", ip)
+        raise HTTPException(
+            status_code=429,
+            detail="Trop de tentatives. Réessayez dans quelques minutes.",
+        )
     if not verify_credentials(body.username, body.password):
+        limiteur_connexion.echec(ip)
         raise HTTPException(status_code=401, detail="Identifiants incorrects.")
+    limiteur_connexion.reussite(ip)
     return create_token()
 
 
 @app.get("/api/projects")
 def get_projects(_: dict = Depends(require_admin)):
-    return load_snapshot()
+    # load_snapshot() lance un scan si le JSON manque : même verrou.
+    with _snapshot_lock:
+        return load_snapshot()
 
 
 @app.post("/api/scan")
 def trigger_scan(_: dict = Depends(require_admin)):
-    return run_scan()
+    with _snapshot_lock:
+        return run_scan()
 
 
 def _refresh_file_in_snapshot(project: str, relative_file: str) -> dict:
@@ -186,6 +260,11 @@ def _refresh_file_in_snapshot(project: str, relative_file: str) -> dict:
     env_path = resolve_env_path(project, relative_file)
     variables = read_variables(env_path)
 
+    with _snapshot_lock:
+        return _maj_snapshot(project, relative_file, variables)
+
+
+def _maj_snapshot(project: str, relative_file: str, variables: list[dict]) -> dict:
     snapshot = load_snapshot()
     for proj in snapshot.get("projects", []):
         if proj["name"] != project:

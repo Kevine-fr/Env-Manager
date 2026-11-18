@@ -136,3 +136,17 @@ Le planificateur interne tourne déjà. Si vous préférez un **vrai cron systè
 - **Servez toujours l'interface en HTTPS** (votre Nginx + certbot). Vous pouvez aussi ajouter une couche `.htpasswd` au niveau du proxy comme pour vos autres services.
 - Choisissez un `ADMIN_PASSWORD` fort et un `JWT_SECRET` aléatoire.
 - Les écritures sont protégées contre le **path traversal** : le projet et le fichier sont validés, le chemin résolu doit rester sous `deploy`, et seuls les vrais fichiers `.env` (pas les `.example`/`.template`) sont modifiables.
+
+---
+
+## Tests, métriques et sauvegardes
+
+```bash
+pip install -r requirements.txt -r requirements-dev.txt
+pytest
+```
+
+- **Métriques Prometheus** : `GET /metrics` (lu par le Prometheus du dépôt Infrastructure sur `env-manager:8000`).
+- **Connexion** : 10 échecs en 15 min depuis la même adresse → `429` jusqu'à ce que la fenêtre se vide.
+- **Sauvegarde** : `./scripts/backup.sh` (archive de `/app/data`, chiffrée si `BACKUP_PASSPHRASE` est posée) ; `./scripts/restore.sh <archive>` pour revenir en arrière. Les envois automatiques vers MinIO sont faits par le dépôt Infrastructure.
+- Conventions de travail : `CLAUDE.md`.

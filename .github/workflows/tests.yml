@@ -1,0 +1,30 @@
+name: Tests
+
+# Les épreuves sur chaque PR et chaque push sur dev : une PR ne s'annonce
+# prête qu'avec cette coche verte (CLAUDE.md).
+on:
+  pull_request:
+  push:
+    branches: [dev]
+  workflow_dispatch:
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt -r requirements-dev.txt
+      - run: pytest -q
+      - name: Scripts shell
+        run: bash -n scripts/backup.sh && bash -n scripts/restore.sh

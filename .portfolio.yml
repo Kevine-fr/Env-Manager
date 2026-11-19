@@ -1,0 +1,15 @@
+# Fiche lue par le portfolio (Portfolio-Server, synchronisation GitHub).
+# Elle prime sur le README : titre, résumé et technologies affichés.
+title: ENV Manager
+subtitle: Tableau de bord des secrets du VPS
+description: Scanne les fichiers .env de chaque projet déployé sur le VPS et permet de les consulter,
+  modifier et sauvegarder depuis une interface web d'administration, avec une vue des services Docker,
+  de nginx et des certificats.
+techStack:
+- Python
+- FastAPI
+- APScheduler
+- Docker
+- Prometheus
+status: published
+year: 2026
